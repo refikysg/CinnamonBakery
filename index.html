@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Mobile App Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#231612">
+    
+    <title>Cinnamon Bakery 🥧</title>
+    
+    <!-- External Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Background Particle Canvas -->
+    <canvas id="bg"></canvas>
+    
+    <main id="game">
+        <!-- Top HUD -->
+        <header>
+            <div class="brand">🥧 Cinnamon Bakery</div>
+            <div class="stats">
+                <span class="badge">🗓️ Day <b id="dv">1</b></span>
+                <span class="badge">⭐ <b id="sv">0</b></span>
+                <span class="badge" id="lvUI">❤️❤️❤️</span>
+                <button class="badge" id="pauseBtn" aria-label="Pause Menu">⏸️ Pause</button>
+            </div>
+        </header>
+
+        <div class="work">
+            <!-- Left Panel: Customer, Ticket, and Pie Stage -->
+            <section class="left">
+                <!-- Customer Info -->
+                <div class="cust">
+                    <span id="av">🦊</span>
+                    <div>
+                        <b id="cn">Finn Fox</b>
+                        <div id="sp">"I'd love a crisp autumn slice!"</div>
+                    </div>
+                </div>
+                
+                <!-- Order Ticket -->
+                <div class="ticket">
+                    <div class="tt">
+                        <span id="tn">Order #1</span>
+                        <span id="pt"></span>
+                    </div>
+                    <div class="pbar"><i id="pb"></i></div>
+                    <div class="tb">
+                        <canvas id="oc" width="200" height="200"></canvas>
+                        <ul id="tl"></ul>
+                    </div>
+                </div>
+                
+                <!-- Main Baking Stage -->
+                <div class="stage">
+                    <div class="plate"></div>
+                    <canvas id="pc" width="440" height="440"></canvas>
+                </div>
+            </section>
+
+            <!-- Right Panel: Controls & Oven -->
+            <section class="right">
+                <nav class="tabs" id="tabs"></nav>
+                <div class="step" id="step">
+                    <!-- Dynamic UI injects here (Crust, Filling, Lid, Oven) -->
+                </div>
+                <div class="foot">
+                    <button class="b out" id="bk">← Back</button>
+                    <button class="b pri" id="nx">Next →</button>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- UI Overlays / Modals -->
+    <div class="ov" id="ov">
+        <!-- Preloader / Intro screens inject here -->
+        <h1>Loading Assets...</h1>
+        <p>Preheating the oven...</p>
+    </div>
+    
+    <div class="ov" id="pauseOv" hidden>
+        <h1>Paused</h1>
+        <p class="quote" id="quoteBox"></p>
+        <button class="b out big" id="musicBtn">🎵 Music: ON</button>
+        <button class="b out big" id="muteBtn">🔊 SFX: ON</button>
+        <button class="b pri big" id="resumeBtn">▶️ Resume</button>
+    </div>
+
+    <!-- External JavaScript Modules -->
+    <script src="js/assets.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
