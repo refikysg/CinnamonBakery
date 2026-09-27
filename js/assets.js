@@ -22,8 +22,8 @@ const FILLINGS = [
 ];
 
 const LIDS = [
+    { n: 'None', i: '🚫', spriteKey: null },
     { n: "Jack-o'-Lantern", i: '🎃', spriteKey: 'lid-jack' },
-    { n: 'Maple Leaf', i: '🍁', spriteKey: 'lid-maple' },
     { n: 'Lattice', i: '🕸️', spriteKey: 'lid-lattice' },
     { n: 'Star Field', i: '✨', spriteKey: 'lid-stars' }
 ];

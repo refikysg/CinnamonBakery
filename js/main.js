@@ -43,14 +43,15 @@ function renderPie(ctx, scale, selections, step, bakeProgress) {
     if (ASSETS.sprites['plate']) {
         ctx.drawImage(ASSETS.sprites['plate'], 0, 0, PIE_SIZE, PIE_SIZE);
     }
-    
+
     if (selections.c >= 0) {
         ctx.drawImage(ASSETS.sprites[CRUSTS[selections.c].spriteKey], 0, 0, PIE_SIZE, PIE_SIZE);
     }
     if (selections.f >= 0 && step >= 1) {
         ctx.drawImage(ASSETS.sprites[FILLINGS[selections.f].spriteKey], 0, 0, PIE_SIZE, PIE_SIZE);
     }
-    if (selections.l >= 0 && step >= 2) {
+    // Only draw a lid if selections.l is greater than 0 (skipping index 0 "None")
+    if (selections.l > 0 && step >= 2) {
         ctx.drawImage(ASSETS.sprites[LIDS[selections.l].spriteKey], 0, 0, PIE_SIZE, PIE_SIZE);
     }
     
@@ -222,12 +223,17 @@ function generateOrder() {
     });
     
     isHolding = 0; // no hiss could be playing yet here, plain reset is fine
-    const target = state.o, doneness = DONENESS[target.d];
+const target = state.o, doneness = DONENESS[target.d];
     $('av').textContent = target.cu[1];$('cn').textContent = target.cu[0];
     $('sp').textContent = '“' + target.cu[2] + '”';$('tn').textContent = 'Order #' + ((state.day - 1) * 3 + state.c + 1); 
     $('pt').textContent = state.ms ? '' : '☕ No rush'; 
-    $('pb').style.width = '100%';$('tl').innerHTML = state.day < 3 ? 
-        `<li>${CRUSTS[target.c].i} ${CRUSTS[target.c].n} crust</li><li>${FILLINGS[target.f].i} ${FILLINGS[target.f].n}</li><li>${LIDS[target.l].i} ${LIDS[target.l].n} lid</li><li>${doneness[3]} ${doneness[0]} bake</li>` : 
+    $('pb').style.width = '100%';
+
+    // Only include the lid list item if a real lid (index > 0) is selected
+    const lidItem = target.l > 0 ? `<li>${LIDS[target.l].i} ${LIDS[target.l].n} lid</li>` : '';
+
+    $('tl').innerHTML = state.day < 3 ? 
+        `<li>${CRUSTS[target.c].i} ${CRUSTS[target.c].n} crust</li><li>${FILLINGS[target.f].i} ${FILLINGS[target.f].n}</li>${lidItem}<li>${doneness[3]} ${doneness[0]} bake</li>` : 
         `<li>Match the picture!</li><li>${doneness[3]} ${doneness[0]} bake</li>`;
     
     renderPie(orderCtx, 200 / PIE_SIZE, target, 3, (doneness[1] + doneness[2]) / 2);
