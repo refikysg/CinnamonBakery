@@ -6,6 +6,28 @@ let isMuted = false;
 // user gesture — so startMusic() below is called from that first click.
 let isMusicPlaying = true;
 
+// Call this when the bake button is pressed down. Unlike playSound(), this
+// plays the actual shared Audio element (not a throwaway clone) so it can be
+// stopped later - and sets it to loop, so it sustains for as long as the
+// player holds the button rather than always playing to its full length.
+function startOvenHiss() {
+    const hiss = ASSETS.sounds['oven-hiss'];
+    if (isMuted || !hiss) return;
+    hiss.loop = true;
+    hiss.volume = 0.5;
+    hiss.currentTime = 0;
+    hiss.play().catch(e => console.warn("Failed to play oven-hiss:", e));
+}
+
+// Call this the moment holding stops (release, bake completing, changing
+// steps, etc.) so the hiss never keeps playing past the actual hold.
+function stopOvenHiss() {
+    const hiss = ASSETS.sounds['oven-hiss'];
+    if (!hiss) return;
+    hiss.pause();
+    hiss.currentTime = 0;
+}
+
 function playSound(key, volume = 1.0) {
     if (isMuted || !ASSETS.sounds[key]) return;
     
@@ -17,6 +39,7 @@ function playSound(key, volume = 1.0) {
 function toggleMute() {
     isMuted = !isMuted;
     document.getElementById('muteBtn').textContent = isMuted ? '🔇 SFX: OFF' : '🔊 SFX: ON';
+    if (isMuted) stopOvenHiss(); // in case they mute while mid-hold
     if (!isMuted) playSound('click-tab', 0.5);
 }
 

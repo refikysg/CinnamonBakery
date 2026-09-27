@@ -7,6 +7,15 @@ const pickRandom = a => a[randomInt(a.length)];
 const PIE_SIZE = 440; // Native sprite resolution
 
 let state = null, isHolding = 0, isPaused = 0;
+
+// Single place that changes isHolding, so the oven-hiss sound can never
+// drift out of sync with the actual hold state (started on true, stopped
+// on false), no matter which code path triggers the change.
+function setHolding(value) {
+    isHolding = value;
+    if (value) startOvenHiss();
+    else stopOvenHiss();
+}
 const pieCtx = $('pc').getContext('2d');
 const orderCtx = $('oc').getContext('2d');
 
@@ -29,6 +38,11 @@ function saveGameData() {
 function renderPie(ctx, scale, selections, step, bakeProgress) {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.clearRect(0, 0, PIE_SIZE, PIE_SIZE);
+    
+    // Draw the plate sprite if loaded
+    if (ASSETS.sprites['plate']) {
+        ctx.drawImage(ASSETS.sprites['plate'], 0, 0, PIE_SIZE, PIE_SIZE);
+    }
     
     if (selections.c >= 0) {
         ctx.drawImage(ASSETS.sprites[CRUSTS[selections.c].spriteKey], 0, 0, PIE_SIZE, PIE_SIZE);
@@ -99,7 +113,7 @@ function renderStepUI() {
         LIDS.forEach((_, i) => $(`opt-l-${i}`).addEventListener('click', () => selectLid(i)));
     } else {
         const bakeBtn = $('bakeBtn');
-        bakeBtn.addEventListener('pointerdown', () => { isHolding = 1; playSound('oven-hiss', 0.5); });
+        bakeBtn.addEventListener('pointerdown', () => setHolding(1));
         $('trashBtn').addEventListener('click', trashPie);
         if (!hideBar) updateGaugeUI();
     }
@@ -122,7 +136,7 @@ function selectLid(index) {
 function changeStep(index) { 
     if (!isStepValid(index)) return; 
     state.step = index; 
-    isHolding = 0; 
+    setHolding(0); 
     playSound('click-tab', 0.5); 
     renderStepUI(); 
     updateMainPie(); 
@@ -141,7 +155,7 @@ function updateGaugeUI() {
 
 function handleRelease() { 
     if (isHolding) { 
-        isHolding = 0; 
+        setHolding(0); 
         if (state && $('gb')) updateGaugeUI(); 
     } 
 }
@@ -151,7 +165,7 @@ function trashPie() {
     state.step = 0; 
     state.pick = { c: -1, f: -1, l: -1 }; 
     state.bake = 0; 
-    isHolding = 0; 
+    setHolding(0); 
     playSound('trash', 0.8); 
     renderStepUI(); 
     updateMainPie();
@@ -207,9 +221,8 @@ function generateOrder() {
         ms: PATIENCE_LEVELS[Math.min(state.day - 1, PATIENCE_LEVELS.length - 1)] * 1000, on: 1
     });
     
-    isHolding = 0; 
+    isHolding = 0; // no hiss could be playing yet here, plain reset is fine
     const target = state.o, doneness = DONENESS[target.d];
-    
     $('av').textContent = target.cu[1];$('cn').textContent = target.cu[0];
     $('sp').textContent = '“' + target.cu[2] + '”';$('tn').textContent = 'Order #' + ((state.day - 1) * 3 + state.c + 1); 
     $('pt').textContent = state.ms ? '' : '☕ No rush'; 
@@ -226,7 +239,7 @@ function generateOrder() {
 
 function serveOrder() {
     if (!state.on) return;
-    state.on = 0; isHolding = 0;
+    state.on = 0; setHolding(0);
     
     const target = state.o, p = state.pick, doneness = DONENESS[target.d];
     const o_min = Math.max(0, doneness[1] - 6);
@@ -276,7 +289,7 @@ function serveOrder() {
 }
 
 function handleLeave() {
-    state.on = 0; isHolding = 0; state.lives--; 
+    state.on = 0; setHolding(0); state.lives--; 
     playSound('fail'); 
     updateHeader();
     saveGameData();
@@ -285,12 +298,20 @@ function handleLeave() {
     $('nextCustBtn2').addEventListener('click', nextCustomer);
 }
 
+function resetSaveAndStart() {
+    localStorage.removeItem('cinnamonBakerySave');
+    startGame();
+}
+
 function showGameOver() {
     showOverlay(`<h1>Bakery Closed!</h1><div class="em">🚪</div><p>You ran out of hearts. Your bakery received <b>${state.reviews} stars</b> over ${state.day} days.</p><button class="b pri big" id="restartBtn">Try Again 🔄</button>`);
-    $('restartBtn').addEventListener('click', () => {
-        localStorage.removeItem('cinnamonBakerySave');
-        startGame();
-    });
+    $('restartBtn').addEventListener('click', resetSaveAndStart);
+}
+
+function restartFromPause() {
+    if (!confirm('Restart the bakery? This will erase your current day and star progress.')) return;
+    if (isPaused) togglePause(); // only close the pause overlay if it's actually open
+    resetSaveAndStart();
 }
 
 function nextCustomer() {
@@ -312,6 +333,7 @@ addEventListener('pointercancel', handleRelease);
 $('pauseBtn').addEventListener('click', togglePause);$('musicBtn').addEventListener('click', toggleMusic);
 $('muteBtn').addEventListener('click', toggleMute);$('resumeBtn').addEventListener('click', togglePause);
 $('bk').addEventListener('click', () => navigateStep(-1));$('nx').addEventListener('click', () => navigateStep(1));
+$('pauseRestartBtn').addEventListener('click', restartFromPause);
 
 // Main game tick: patience countdown + oven bake progress
 setInterval(() => {
@@ -326,7 +348,7 @@ setInterval(() => {
     if (isHolding && state.step === 3 && state.bake < 100) {
         state.bake = Math.min(100, state.bake + 1 + state.day * 0.15);
         if (state.bake >= 100) { 
-            isHolding = 0; 
+            setHolding(0); 
             playSound('oven-done', 0.8); 
         }
         if (!hideGaugeCheck()) updateGaugeUI(); 
@@ -353,10 +375,11 @@ const bgCanvas = $('bg'), bgCtx = bgCanvas.getContext('2d');
 const LEAVES = Array.from({ length: 22 }, () => ({
     x: Math.random() * innerWidth, 
     y: Math.random() * innerHeight, 
-    s: 10 + Math.random() * 12, 
+    s: 16 + Math.random() * 16, // Size of the leaf image
     v: 0.4 + Math.random(), 
-    a: Math.random() * 6, 
-    k: pickRandom(['#e07a5f', '#f4a261', '#81b29a', '#d4a373'])
+    a: Math.random() * 6,       // Rotation angle
+    r: 0.02 + Math.random() * 0.02, // Rotation speed
+    spriteKey: pickRandom(['leaf-1', 'leaf-2','leaf-3'])
 }));
 
 function resizeBg() { 
@@ -368,24 +391,32 @@ resizeBg();
 
 function animateLeaves() {
     bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+    
     for (const l of LEAVES) {
         bgCtx.save(); 
         bgCtx.translate(l.x, l.y); 
         bgCtx.rotate(l.a); 
-        bgCtx.fillStyle = l.k;
-        bgCtx.beginPath(); 
-        bgCtx.ellipse(0, 0, l.s, l.s / 2, 0, 0, 7); 
-        bgCtx.fill(); 
+        
+        const leafImg = ASSETS.sprites[l.spriteKey];
+        if (leafImg && leafImg.complete) {
+            // Draw the PNG centered, scaled to size 'l.s'
+            bgCtx.drawImage(leafImg, -l.s / 2, -l.s / 2, l.s, l.s);
+        }
+        
         bgCtx.restore();
         
         l.y += l.v; 
         l.x += Math.sin(l.y * 0.01) * 0.6; 
-        l.a += 0.01;
-        if (l.y > bgCanvas.height + 20) { 
-            l.y = -20; 
+        l.a += l.r;
+        
+        if (l.y > bgCanvas.height + 30) { 
+            l.y = -30; 
             l.x = Math.random() * bgCanvas.width; 
         }
     }
-    if (!matchMedia('(prefers-reduced-motion:reduce)').matches) requestAnimationFrame(animateLeaves);
+    
+    if (!matchMedia('(prefers-reduced-motion:reduce)').matches) {
+        requestAnimationFrame(animateLeaves);
+    }
 }
 animateLeaves();

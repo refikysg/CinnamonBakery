@@ -89,7 +89,12 @@ const spriteManifest = {
     'lid-stars': 'assets/sprites/lids/lid-stars.png',
     
     // UI Elements (Optional for later expansion)
-    'plate': 'assets/sprites/ui/plate.png'
+    'plate': 'assets/sprites/ui/plate.png',
+
+    // Leaf Sprites for Background
+    'leaf-1': 'assets/sprites/bg/leaf-1.png',
+    'leaf-2': 'assets/sprites/bg/leaf-2.png',
+    'leaf-3': 'assets/sprites/bg/leaf-3.png'
 };
 
 const soundManifest = {
